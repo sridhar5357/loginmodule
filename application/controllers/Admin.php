@@ -8,16 +8,12 @@ class Admin extends CI_Controller {
 		$this->load->database();
 		$this->load->library(array('ion_auth','form_validation'));
 		$this->load->helper(array('url','language'));
-
 		$this->form_validation->set_error_delimiters($this->config->item('error_start_delimiter', 'ion_auth'), $this->config->item('error_end_delimiter', 'ion_auth'));
-
 		$this->lang->load('auth');
 	}
 
-	// redirect if needed, otherwise display the user list
 	public function index()
 	{
-
 		if (!$this->ion_auth->logged_in())
 		{
 			// redirect them to the login page
@@ -30,18 +26,17 @@ class Admin extends CI_Controller {
 		}
 		else
 		{
-			// set the flash data error message if there is one
-			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
+			
+			$this->data['title'] = 'Admin Dashboard';
+			$this->data['content_title'] = 'Admin Dashboard';
+			$this->data['view_file'] = 'admin/dashboard';
+			$this->data['base_url'] = $this->config->item('base_url');
+			$this->load->library('template');//load the template library file
+			$this->template->admin($this->data);
+			
+			//$this->load->view('admin/dashboard1');// full dashboard view
+		}	
 
-			//list the users
-			$this->data['users'] = $this->ion_auth->users()->result();
-			foreach ($this->data['users'] as $k => $user)
-			{
-				$this->data['users'][$k]->groups = $this->ion_auth->get_users_groups($user->id)->result();
-			}
-
-			$this->_render_page('admin/index', $this->data);
-		}
 	}
 
 	// log the user in
@@ -64,7 +59,7 @@ class Admin extends CI_Controller {
 				//if the login is successful
 				//redirect them back to the home page
 				$this->session->set_flashdata('message', $this->ion_auth->messages());
-				redirect('/', 'refresh');
+				redirect('admin/', 'refresh');
 			}
 			else
 			{
@@ -226,7 +221,7 @@ class Admin extends CI_Controller {
 		            	}
 
 		                $this->session->set_flashdata('message', $this->ion_auth->errors());
-                		redirect("admin/forgot_password", 'refresh');
+                		redirect("admin/forgot-password", 'refresh');
             		}
 
 			// run the forgotten password method to email an activation code to the user
@@ -236,12 +231,12 @@ class Admin extends CI_Controller {
 			{
 				// if there were no errors
 				$this->session->set_flashdata('message', $this->ion_auth->messages());
-				redirect("admin/login", 'refresh'); //we should display a confirmation page here instead of the login page
+				redirect("admin/forgot-password", 'refresh'); //we should display a confirmation page here instead of the login page
 			}
 			else
 			{
 				$this->session->set_flashdata('message', $this->ion_auth->errors());
-				redirect("admin/forgot_password", 'refresh');
+				redirect("admin/forgot-password", 'refresh');
 			}
 		}
 	}
@@ -332,7 +327,7 @@ class Admin extends CI_Controller {
 		{
 			// if the code is invalid then send them back to the forgot password page
 			$this->session->set_flashdata('message', $this->ion_auth->errors());
-			redirect("admin/forgot_password", 'refresh');
+			redirect("admin/forgot-password", 'refresh');
 		}
 	}
 
@@ -359,7 +354,7 @@ class Admin extends CI_Controller {
 		{
 			// redirect them to the forgot password page
 			$this->session->set_flashdata('message', $this->ion_auth->errors());
-			redirect("admin/forgot_password", 'refresh');
+			redirect("admin/forgot-password", 'refresh');
 		}
 	}
 
@@ -458,7 +453,7 @@ class Admin extends CI_Controller {
             // check to see if we are creating the user
             // redirect them back to the admin page
             $this->session->set_flashdata('message', $this->ion_auth->messages());
-            redirect("admin", 'refresh');
+            redirect("admin/manage-user", 'refresh');
         }
         else
         {
@@ -518,6 +513,36 @@ class Admin extends CI_Controller {
             $this->_render_page('admin/create_user', $this->data);
         }
     }
+
+    public function manage_user()
+	{
+
+		if (!$this->ion_auth->logged_in())
+		{
+			// redirect them to the login page
+			redirect('admin/login', 'refresh');
+		}
+		elseif (!$this->ion_auth->is_admin()) // remove this elseif if you want to enable this for non-admins
+		{
+			// redirect them to the home page because they must be an administrator to view this
+			return show_error('You must be an administrator to view this page.');
+		}
+		else
+		{
+			// set the flash data error message if there is one
+			$this->data['message'] = (validation_errors()) ? validation_errors() : $this->session->flashdata('message');
+
+			//list the users
+			$this->data['users'] = $this->ion_auth->users()->result();
+			foreach ($this->data['users'] as $k => $user)
+			{
+				$this->data['users'][$k]->groups = $this->ion_auth->get_users_groups($user->id)->result();
+			}
+
+			$this->_render_page('admin/manage_user', $this->data);
+		}
+	}
+
 
 	// edit a user
 	public function edit_user($id)
@@ -595,11 +620,11 @@ class Admin extends CI_Controller {
 				    $this->session->set_flashdata('message', $this->ion_auth->messages() );
 				    if ($this->ion_auth->is_admin())
 					{
-						redirect('admin', 'refresh');
+						redirect('admin/manage-user', 'refresh');
 					}
 					else
 					{
-						redirect('/', 'refresh');
+						redirect('admin/', 'refresh');
 					}
 
 			    }
@@ -609,11 +634,11 @@ class Admin extends CI_Controller {
 				    $this->session->set_flashdata('message', $this->ion_auth->errors() );
 				    if ($this->ion_auth->is_admin())
 					{
-						redirect('admin', 'refresh');
+						redirect('admin/manage-user', 'refresh');
 					}
 					else
 					{
-						redirect('/', 'refresh');
+						redirect('admin/', 'refresh');
 					}
 
 			    }
